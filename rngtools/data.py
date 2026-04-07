@@ -575,6 +575,7 @@ def completeManips():
             for manip, offset in maniplist[i].items():
                 if offset not in manipdict["reversemanips"]:
                     manipdict["reversemanips"][offset] = manip
+    print("manips completed")
 completeManips()
 
 cutscenes = {

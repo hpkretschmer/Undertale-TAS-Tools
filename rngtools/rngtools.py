@@ -1,3 +1,8 @@
+"""
+This module provides various tools for working with RNG in Undertale.
+It is designed to be used in an interactive python environment or as a library for other scripts.
+"""
+
 import bisect
 import itertools
 
@@ -239,3 +244,52 @@ def scrollOffsetsWithPause(oneframeoffset, pausestart, pauseend, length = 200):
     return dp
 
 # candlesOrMagicScrollOffsets = scrollOffsetsWithPause(2, 40, 50)
+
+"""
+Graph nodes are represented as (stepid, index), where 
+- stepid is some object representing the current step
+- index is the index of the current RNG call in randomVals/chooseVals
+Edges are represented as (stepid, index) -> List(nextstepid, nextindex, delay, infostring), where
+- stepid and nextstepid are the stepids of the current and next steps
+- index and nextindex are the indices of the before and after RNG calls in randomVals/chooseVals
+- delay is the timeloss incurred by the edge
+- infostring is a string describing the edge, used for debugging and output purposes
+Parameters:
+- startstep: the stepid of the starting node
+- startindex: the index of the starting node
+- targetstep: the stepid of the target node
+- edgefunc: (stepid, index) -> List(nextstepid, nextindex, delay, infostring)
+Returns:
+- (totaldelay, path), where
+- totaldelay is the total timeloss of the path
+- path is a list of (stepid, index, infostring) representing the path from the starting node to the target node
+"""
+def graphsearch(startstep, startindex, targetstep, edgefunc):
+    # Dijkstra's algorithm with backtracking
+    import heapq
+    heap = [(0, startindex, startstep)]
+    visited = {(startstep, startindex)}
+    parent = {(startstep, startindex): None}
+    targetfound = False
+    while heap:
+        delay, index, step = heapq.heappop(heap)
+        if step == targetstep:
+            targetfound = True
+            break
+        for nextstep, nextindex, edgedelay, infostring in edgefunc(step, index):
+            if (nextstep, nextindex) not in visited:
+                visited.add((nextstep, nextindex))
+                parent[(nextstep, nextindex)] = (step, index, infostring)
+                heapq.heappush(heap, (delay + edgedelay, nextindex, nextstep))
+    if not targetfound:
+        print("Target not found")
+        return None
+    path = []
+    curr = (step, index)
+    while curr is not None:
+        step, index = curr
+        infostring = parent[curr][2] if parent[curr] is not None else ""
+        path.append((step, index, infostring))
+        curr = parent[curr]
+    path.reverse()
+    return (delay, path)
